@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MüzliMatch</title>
+  <style>
+    :root {
+      --bg: #f7f4ef;
+      --card: #fffdf9;
+      --line: #d9d1c7;
+      --text: #2a241f;
+      --muted: #7a6f63;
+      --accent: #c084fc;
+      --accent-strong: #a855f7;
+      --danger: #dc2626;
+      --shadow: 0 20px 60px rgba(42, 36, 31, 0.08);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(42,36,31,.11) 1px, transparent 0) 0 0/28px 28px,
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .phone {
+      width: min(100%, 460px);
+      min-height: 780px;
+      background: var(--card);
+      border: 2px solid rgba(42, 36, 31, 0.15);
+      border-radius: 36px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen {
+      display: none;
+      min-height: 780px;
+      padding: 24px;
+      animation: fade .22s ease;
+    }
+
+    .screen.active { display: block; }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 40px;
+      margin-bottom: 20px;
+    }
+
+    .title {
+      font-size: 2rem;
+      font-weight: 800;
+      text-align: center;
+      margin: 18px 0 8px;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      text-align: center;
+      margin: 0 0 28px;
+      font-size: 0.98rem;
+      line-height: 1.5;
+    }
+
+    .stack, .form { display: grid; gap: 16px; }
+    .center { text-align: center; }
+    .spacer-lg { height: 22px; }
+
+    .btn {
+      appearance: none;
+      border: 2px solid rgba(42,36,31,.16);
+      background: white;
+      color: var(--text);
+      padding: 14px 18px;
+      border-radius: 18px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .18s ease;
+      box-shadow: 0 6px 20px rgba(42,36,31,.04);
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary {
+      background: linear-gradient(180deg, #d8b4fe, #c084fc);
+      border-color: #c084fc;
+      color: #2d153f;
+    }
+    .btn-danger {
+      background: #fff1f2;
+      color: var(--danger);
+      border-color: #fecdd3;
+    }
+    .btn-ghost {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+      color: var(--muted);
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .btn-small {
+      padding: 10px 14px;
+      font-size: .95rem;
+      border-radius: 14px;
+    }
+    .btn-full { width: 100%; }
+
+    label {
+      display: block;
+      font-size: .95rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: none;
+      border-bottom: 2px solid var(--line);
+      background: transparent;
+      padding: 10px 2px;
+      font-size: 1rem;
+      color: var(--text);
+      outline: none;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+      border: 2px solid var(--line);
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+
+    .actions-row {
+      display: flex;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .hero-buttons {
+      width: min(100%, 260px);
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .progress {
+      height: 10px;
+      background: #efe7dc;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .progress > div {
+      height: 100%;
+      background: linear-gradient(90deg, #f0abfc, #c084fc);
+      width: 33%;
+      transition: width .2s ease;
+    }
+
+    .question-box, .option-list, .profile-card, .match-box, .message-box {
+      border: 2px solid rgba(42,36,31,.12);
+      border-radius: 24px;
+      background: white;
+    }
+
+    .question-box { padding: 18px; font-weight: 700; }
+    .option-list { padding: 10px; display: grid; gap: 8px; }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 10px;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+
+    .radio-option:hover { background: #faf7ff; }
+    .radio-option input { width: auto; margin: 0; }
+
+    .avatar-upload {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 2px dashed var(--line);
+      display: grid;
+      place-items: center;
+      font-size: 3rem;
+      margin: 0 auto 12px;
+      background: #faf8f4;
+    }
+
+    .chip-list { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      background: #faf5ff;
+      color: #6b21a8;
+      border: 1px solid #e9d5ff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: .9rem;
+      font-weight: 700;
+    }
+
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .checkbox-item {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid #eadfce;
+      border-radius: 16px;
+      padding: 12px;
+      background: white;
+    }
+
+    .checkbox-item input { width: auto; }
+
+    .discover-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .discover-head .title-mini {
+      font-size: 1.7rem;
+      font-weight: 800;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      border: 2px solid rgba(42,36,31,.12);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      background: white;
+      font-weight: 900;
+    }
+
+    .profile-card {
+      padding: 18px;
+      box-shadow: 0 16px 40px rgba(42,36,31,.06);
+    }
+
+    .profile-media {
+      height: 290px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, #faf8f4, #f3ede4);
+      display: grid;
+      place-items: center;
+      font-size: 5rem;
+      position: relative;
+      margin-bottom: 18px;
+    }
+
+    .report-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+    }
+
+    .profile-name {
+      font-size: 1.9rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .profile-bio {
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 16px;
+    }
+
+    .match-box, .message-box {
+      padding: 40px 24px;
+      text-align: center;
+      margin-top: 36px;
+    }
+
+    .match-title {
+      font-size: 2.6rem;
+      font-weight: 900;
+      margin-bottom: 18px;
+    }
+
+    .match-names {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 26px;
+    }
+
+    .settings-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border: 1px solid #eadfce;
+      border-radius: 16px;
+      background: white;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(42,36,31,.32);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 30;
+    }
+
+    .modal.open { display: flex; }
+
+    .modal-card {
+      width: min(100%, 420px);
+      background: white;
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.15);
+      border: 1px solid rgba(42,36,31,.08);
+    }
+
+    .modal-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.5rem;
+    }
+
+    .muted { color: var(--muted); }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 32px 18px;
+      border: 2px dashed var(--line);
+      border-radius: 24px;
+      background: #fff;
+    }
+
+    @media (max-width: 520px) {
+      .phone, .screen { min-height: 100vh; border-radius: 0; }
+      .app { padding: 0; }
+      .checkbox-grid { grid-template-columns: 1fr; }
+      .match-title { font-size: 2rem; }
+      .match-names { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="phone">
+      <section class="screen active" id="homeScreen">
+        <div class="spacer-lg"></div>
+        <h1 class="title">MüzliMatch</h1>
+        <p class="subtitle">A társkereső, ahol a szívek és a gabonapelyhek találkoznak.</p>
+        <div class="hero-buttons">
+          <button class="btn btn-primary btn-full" data-go="loginScreen">Belépés</button>
+          <button class="btn btn-full" data-go="registerScreen">Regisztráció</button>
+          <button class="btn btn-ghost btn-full" data-go="forgotScreen">Elfelejtett jelszó</button>
+        </div>
+      </section>
+
+      <section class="screen" id="loginScreen">
+        <div class="topbar">
+          <button class="btn btn-small" data-back>Vissza</button>
+          <button class="btn btn-small" data-go="registerScreen">Regisztráció</button>
+        </div>
+        <h2 class="title">Belépés</h2>
+        <div class="form">
+          <div>
+            <label for="loginUsername">Felhasználónév</label>
+            <input id="loginUsername" type="text" />
+          </div>
+          <div>
+            <label for="loginPassword">Jelszó</label>
+            <input id="loginPassword" type="password" />
+          </div>
+          <div class="actions-row">
+            <button class="btn btn-ghost" data-go="forgotScreen">Elfelejtett jelszó</button>
+            <button class="btn btn-primary" id="loginBtn">Belépés</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="registerScreen">
+        <div class="topbar">
+          <button class="btn btn-small" data-back>Vissza</button>
+          <div></div>
+        </div>
+        <h2 class="title">Regisztráció</h2>
+        <div class="form">
+          <div>
+            <label for="regEmail">Email</label>
+            <input id="regEmail" type="email" />
+          </div>
+          <div>
+            <label for="regName">Név</label>
+            <input id="regName" type="text" />
+          </div>
+          <div>
+            <label for="regUsername">Felhasználónév</label>
+            <input id="regUsername" type="text" />
+          </div>
+          <div>
+            <label for="regPassword">Jelszó</label>
+            <input id="regPassword" type="password" />
+          </div>
+          <div>
+            <label for="regPasswordAgain">Jelszó újra</label>
+            <input id="regPasswordAgain" type="password" />
+          </div>
+          <button class="btn btn-primary" id="createAccountBtn">Létrehoz</button>
+        </div>
+      </section>
+
+      <section class="screen" id="forgotScreen">
+        <div class="topbar">
+          <button class="btn btn-small" data-back>Vissza</button>
+          <div></div>
+        </div>
+        <h2 class="title">Elfelejtett jelszó</h2>
+        <div class="form">
+          <div>
+            <label for="forgotEmail">Email</label>
+            <input id="forgotEmail" type="email" />
+          </div>
+          <button class="btn btn-primary" id="forgotBtn">Küldés</button>
+        </div>
+      </section>
+
+      <section class="screen" id="onboardingScreen">
+        <div class="topbar">
+          <button class="btn btn-small" data-back>Vissza</button>
+          <strong id="stepCounter">1/3</strong>
+        </div>
+        <h2 class="title">Ízlésfelmérés</h2>
+        <div class="progress"><div id="progressBar"></div></div>
+        <div class="question-box" id="questionText"></div>
+        <div class="option-list" id="optionsList"></div>
+        <div class="actions-row" style="justify-content:flex-end; margin-top:16px;">
+          <button class="btn btn-primary" id="nextQuestionBtn">Tovább</button>
+        </div>
+      </section>
+
+      <section class="screen" id="profileEditScreen">
+        <div class="topbar">
+          <button class="btn btn-small" data-back>Vissza</button>
+          <button class="btn btn-small" data-go="settingsScreen">Beállítások</button>
+        </div>
+        <h2 class="title">Profil szerkesztése</h2>
+        <div class="avatar-upload" id="avatarPreview">👤</div>
+        <div class="center" style="margin-bottom:18px;">
+          <button class="btn btn-small" id="avatarBtn">Feltöltés</button>
+        </div>
+        <div class="form">
+          <div>
+            <label for="profileName">Név</label>
+            <input id="profileName" type="text" />
+          </div>
+          <div>
+            <label for="profileBio">Bio</label>
+            <textarea id="profileBio"></textarea>
+          </div>
+          <div>
+            <label>Müzli</label>
+            <div class="checkbox-grid" id="cerealGrid"></div>
+            <div style="margin-top:12px;">
+              <button class="btn btn-small" id="anythingBtn">Kiválasztás: Bármi</button>
+            </div>
+            <div class="chip-list" id="selectedCereals" style="margin-top:12px;"></div>
+          </div>
+          <button class="btn btn-primary" id="saveProfileBtn">Mentés</button>
+        </div>
+      </section>
+
+      <section class="screen" id="discoverScreen">
+        <div class="discover-head">
+          <div class="title-mini">Párok</div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-small" data-go="filtersScreen">Szűrés</button>
+            <button class="btn btn-small" data-go="profileEditScreen">Profil</button>
+          </div>
+        </div>
+
+        <div id="discoverContent"></div>
+      </section>
+
+      <section class="screen" id="matchScreen">
+        <div class="match-box">
+          <div class="match-title">MATCH!</div>
+          <div class="match-names" id="matchNames">Te + Anna</div>
+          <div class="stack" style="max-width: 220px; margin: 0 auto;">
+            <button class="btn btn-primary" data-go="discoverScreen">Folytatás</button>
+            <button class="btn" data-go="discoverScreen">Tovább</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="settingsScreen">
+        <div class="topbar">
+          <button class="btn btn-small" data-back>Vissza</button>
+          <div></div>
+        </div>
+        <h2 class="title">Beállítások</h2>
+        <div class="settings-list">
+          <div>
+            <label for="settingsEmail">Email</label>
+            <input id="settingsEmail" type="email" />
+          </div>
+          <div>
+            <label for="settingsDistance">Távolság</label>
+            <input id="settingsDistance" type="text" />
+          </div>
+          <label class="toggle-row">
+            <span>Értesítések</span>
+            <input type="checkbox" id="notificationsToggle" />
+          </label>
+          <label class="toggle-row">
+            <span>Profil látható</span>
+            <input type="checkbox" id="visibilityToggle" />
+          </label>
+          <div class="actions-row" style="margin-top:8px;">
+            <button class="btn btn-danger" id="deleteAccountBtn">Fiók törlése</button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn" id="logoutBtn">Kilépés</button>
+              <button class="btn btn-primary" id="saveSettingsBtn">Mentés</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="filtersScreen">
+        <div class="topbar">
+          <button class="btn btn-small" data-back>Vissza</button>
+          <div></div>
+        </div>
+        <h2 class="title">Szűrés</h2>
+        <div class="form">
+          <div>
+            <label for="filterMinAge">Minimum életkor</label>
+            <input id="filterMinAge" type="number" />
+          </div>
+          <div>
+            <label for="filterMaxAge">Maximum életkor</label>
+            <input id="filterMaxAge" type="number" />
+          </div>
+          <div>
+            <label for="filterCereal">Müzli</label>
+            <input id="filterCereal" type="text" />
+          </div>
+          <div>
+            <label for="filterCity">Város</label>
+            <input id="filterCity" type="text" />
+          </div>
+          <div>
+            <label for="filterBio">Bio kulcsszó</label>
+            <input id="filterBio" type="text" />
+          </div>
+          <label class="toggle-row">
+            <span>Csak egyező müzliízlés</span>
+            <input type="checkbox" id="filterTaste" />
+          </label>
+          <button class="btn btn-primary" id="applyFiltersBtn">ok!</button>
+        </div>
+      </section>
+
+      <section class="screen" id="messageScreen">
+        <div class="message-box">
+          <h2 id="messageTitle" style="font-size:2rem; margin:0 0 14px;"></h2>
+          <p id="messageBody" class="muted" style="font-size:1.05rem; line-height:1.6; margin-bottom:24px;"></p>
+          <button class="btn btn-primary" id="messageOkBtn">Ok!</button>
+        </div>
+      </section>
+
+      <section class="screen" id="deletedScreen">
+        <div class="message-box">
+          <h2 style="font-size:2rem; margin:0 0 14px;">Fiók törölve!</h2>
+          <p class="muted" style="font-size:1.05rem; line-height:1.6; margin-bottom:24px;">A fiók törlésre került ebben a demóban.</p>
+          <button class="btn btn-primary" id="backHomeBtn">Vissza a kezdőoldalra</button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="modal" id="reportModal">
+    <div class="modal-card">
+      <h3>Profil jelentése</h3>
+      <p class="muted">Írd le röviden, miért szeretnéd jelenteni ezt a profilt.</p>
+      <textarea id="reportReason" placeholder="Például: sértő tartalom, spam, hamis profil..."></textarea>
+      <div class="actions-row" style="margin-top:16px;">
+        <button class="btn" data-close="reportModal">Mégse</button>
+        <button class="btn btn-danger" id="reportSubmitBtn">Tiltás</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="banModal">
+    <div class="modal-card">
+      <h3>Felhasználó tiltva!</h3>
+      <p class="muted">A profil el lett rejtve előled. Később visszavonhatod a tiltást.</p>
+      <div class="actions-row" style="margin-top:16px;">
+        <button class="btn" data-close="banModal">Visszavon</button>
+        <button class="btn btn-primary" id="continueAfterBanBtn">Folytatás</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="deleteModal">
+    <div class="modal-card">
+      <h3>Biztosan törli a fiókot?</h3>
+      <p class="muted">Ez a művelet a demóban sem visszavonható.</p>
+      <div class="actions-row" style="margin-top:16px;">
+        <button class="btn" data-close="deleteModal">Nem</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Igen</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      history: ["homeScreen"],
+      onboardingIndex: 0,
+      onboardingAnswers: {},
+      profile: {
+        name: "Anna",
+        bio: "",
+        cereals: ["Bármi"],
+        avatar: "👤",
+      },
+      settings: {
+        email: "anna@example.com",
+        distance: "25 km",
+        notifications: true,
+        visible: true,
+      },
+      filters: {
+        minAge: 18,
+        maxAge: 99,
+        cereal: "",
+        city: "",
+        bio: "",
+        taste: false,
+      },
+      profiles: [
+        { id: 1, name: "Anna", age: 24, bio: "Szeretek futni.", cereal: "Cerbona", city: "Budapest", avatar: "🥣" },
+        { id: 2, name: "János", age: 24, bio: "Otthon szeretek maradni.", cereal: "Kelloggs", city: "Győr", avatar: "🌾" },
+        { id: 3, name: "Zoltán", age: 20, bio: "Műhelyben dolgozom.", cereal: "Lucky Charms", city: "Pécs", avatar: "⭐" },
+        { id: 4, name: "Lili", age: 22, bio: "Szeretek futni és túrázni.", cereal: "Vitalis", city: "Szeged", avatar: "🍓" },
+        { id: 5, name: "Bence", age: 27, bio: "Mindig ropogós müzlit keresek.", cereal: "Fitness", city: "Debrecen", avatar: "🥛" }
+      ],
+      visibleIndex: 0,
+      currentMatch: null,
+      messageReturnScreen: "homeScreen"
+    };
+
+    const cereals = ["Fitness", "Vitalis", "Lion", "Cheerios", "Kelloggs", "Lucky Charms", "Cerbona", "Chocapic"];
+    const onboarding = [
+      { id: "fav", question: "Mi a kedvenc müzlid?", options: ["Fitness", "Vitalis", "Lion", "Cheerios"] },
+      { id: "milk", question: "Mivel eszed legszívesebben?", options: ["Tejjel", "Joghurttal", "Növényi itallal", "Szárazon"] },
+      { id: "taste", question: "Milyen ízvilágot szeretsz?", options: ["Csokis", "Gyümölcsös", "Magvas", "Vegyes"] }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    const screens = [...document.querySelectorAll('.screen')];
+
+    function currentScreen() {
+      return state.history[state.history.length - 1];
+    }
+
+    function showScreen(id, push = true) {
+      screens.forEach(s => s.classList.toggle('active', s.id === id));
+      if (push) state.history.push(id);
+      if (id === 'onboardingScreen') renderOnboarding();
+      if (id === 'profileEditScreen') renderProfileEdit();
+      if (id === 'discoverScreen') renderDiscover();
+      if (id === 'settingsScreen') renderSettings();
+      if (id === 'filtersScreen') renderFilters();
+      if (id === 'matchScreen') renderMatch();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function back() {
+      if (state.history.length > 1) {
+        state.history.pop();
+        showScreen(currentScreen(), false);
+      }
+    }
+
+    document.querySelectorAll('[data-go]').forEach(btn => {
+      btn.addEventListener('click', () => showScreen(btn.dataset.go));
+    });
+
+    document.querySelectorAll('[data-back]').forEach(btn => btn.addEventListener('click', back));
+    document.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => closeModal(btn.dataset.close));
+    });
+
+    function openModal(id) { $(id).classList.add('open'); }
+    function closeModal(id) { $(id).classList.remove('open'); }
+
+    $('loginBtn').addEventListener('click', () => {
+      const u = $('loginUsername').value.trim();
+      const p = $('loginPassword').value.trim();
+      if (!u || !p) return showMessage('Error', 'Kérlek add meg a felhasználónevet és a jelszót.', 'loginScreen');
+      showScreen('discoverScreen');
+    });
+
+    $('createAccountBtn').addEventListener('click', () => {
+      const email = $('regEmail').value.trim();
+      const name = $('regName').value.trim();
+      const user = $('regUsername').value.trim();
+      const pw = $('regPassword').value;
+      const pw2 = $('regPasswordAgain').value;
+      if (!email || !name || !user || !pw || !pw2) return showMessage('Error', 'A regisztrációhoz minden mező kitöltése szükséges.', 'registerScreen');
+      if (pw !== pw2) return showMessage('Error', 'A két jelszó nem egyezik.', 'registerScreen');
+      state.profile.name = name;
+      showScreen('onboardingScreen');
+    });
+
+    $('forgotBtn').addEventListener('click', () => {
+      const email = $('forgotEmail').value.trim() || 'anna@example.com';
+      showMessage('Email elküldve', `Jelszó-helyreállító email elküldve ide: ${email}.`, 'forgotScreen');
+    });
+
+    function renderOnboarding() {
+      const step = onboarding[state.onboardingIndex];
+      $('stepCounter').textContent = `${state.onboardingIndex + 1}/${onboarding.length}`;
+      $('progressBar').style.width = `${((state.onboardingIndex + 1) / onboarding.length) * 100}%`;
+      $('questionText').textContent = step.question;
+      $('optionsList').innerHTML = step.options.map(option => `
+        <label class="radio-option">
+          <input type="radio" name="onboardingOption" value="${option}" ${state.onboardingAnswers[step.id] === option ? 'checked' : ''}>
+          <span>${option}</span>
+        </label>
+      `).join('');
+    }
+
+    $('nextQuestionBtn').addEventListener('click', () => {
+      const selected = document.querySelector('input[name="onboardingOption"]:checked');
+      const step = onboarding[state.onboardingIndex];
+      if (!selected) return showMessage('Error', 'Válassz egy opciót a továbblépéshez.', 'onboardingScreen');
+      state.onboardingAnswers[step.id] = selected.value;
+      if (state.onboardingIndex < onboarding.length - 1) {
+        state.onboardingIndex += 1;
+        renderOnboarding();
+      } else {
+        state.profile.cereals = [state.onboardingAnswers.fav || 'Bármi'];
+        showScreen('profileEditScreen');
+      }
+    });
+
+    function renderProfileEdit() {
+      $('avatarPreview').textContent = state.profile.avatar;
+      $('profileName').value = state.profile.name;
+      $('profileBio').value = state.profile.bio;
+      $('cerealGrid').innerHTML = cereals.map(cereal => `
+        <label class="checkbox-item">
+          <input type="checkbox" value="${cereal}" ${state.profile.cereals.includes(cereal) ? 'checked' : ''}>
+          <span>${cereal}</span>
+        </label>
+      `).join('');
+      bindCerealChecks();
+      renderSelectedCereals();
+    }
+
+    function bindCerealChecks() {
+      [...$('cerealGrid').querySelectorAll('input[type="checkbox"]')].forEach(input => {
+        input.addEventListener('change', () => {
+          const value = input.value;
+          if (input.checked) {
+            state.profile.cereals = [...state.profile.cereals.filter(c => c !== 'Bármi'), value];
+          } else {
+            state.profile.cereals = state.profile.cereals.filter(c => c !== value);
+            if (!state.profile.cereals.length) state.profile.cereals = ['Bármi'];
+          }
+          renderSelectedCereals();
+        });
+      });
+    }
+
+    function renderSelectedCereals() {
+      $('selectedCereals').innerHTML = state.profile.cereals.map(c => `<span class="chip">${c}</span>`).join('');
+    }
+
+    $('anythingBtn').addEventListener('click', () => {
+      state.profile.cereals = ['Bármi'];
+      renderProfileEdit();
+    });
+
+    $('avatarBtn').addEventListener('click', () => {
+      state.profile.avatar = state.profile.avatar === '👤' ? '🥣' : state.profile.avatar === '🥣' ? '🌾' : '👤';
+      $('avatarPreview').textContent = state.profile.avatar;
+    });
+
+    $('saveProfileBtn').addEventListener('click', () => {
+      state.profile.name = $('profileName').value.trim() || 'Anna';
+      state.profile.bio = $('profileBio').value.trim();
+      showScreen('discoverScreen');
+    });
+
+    function filteredProfiles() {
+      return state.profiles.filter(p => {
+        if (p.age < Number(state.filters.minAge || 18)) return false;
+        if (p.age > Number(state.filters.maxAge || 99)) return false;
+        if (state.filters.cereal && !p.cereal.toLowerCase().includes(state.filters.cereal.toLowerCase())) return false;
+        if (state.filters.city && !p.city.toLowerCase().includes(state.filters.city.toLowerCase())) return false;
+        if (state.filters.bio && !p.bio.toLowerCase().includes(state.filters.bio.toLowerCase())) return false;
+        if (state.filters.taste && !state.profile.cereals.includes('Bármi') && !state.profile.cereals.includes(p.cereal)) return false;
+        return true;
+      });
+    }
+
+    function currentProfileData() {
+      const items = filteredProfiles();
+      if (!items.length) return null;
+      return items[state.visibleIndex % items.length];
+    }
+
+    function renderDiscover() {
+      const container = $('discoverContent');
+      const p = currentProfileData();
+      if (!p) {
+        container.innerHTML = `
+          <div class="empty">
+            Nincs találat a jelenlegi szűrők alapján.<br><br>
+            <button class="btn btn-primary btn-small" data-go="filtersScreen">Szűrők módosítása</button>
+          </div>
+        `;
+        container.querySelector('[data-go]').addEventListener('click', () => showScreen('filtersScreen'));
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="profile-card">
+          <div class="profile-media">${p.avatar}<button class="icon-btn report-btn" id="openReportBtn">!</button></div>
+          <div class="profile-name">${p.name}, ${p.age}</div>
+          <div class="profile-bio">“${p.bio}”</div>
+          <div style="font-weight:700; margin-bottom:18px;">Müzli: ${p.cereal}</div>
+          <div class="actions-row">
+            <button class="btn btn-full" id="skipBtn">Skip</button>
+            <button class="btn btn-primary btn-full" id="likeBtn">Like</button>
+          </div>
+        </div>
+      `;
+
+      $('skipBtn').addEventListener('click', nextProfile);
+      $('likeBtn').addEventListener('click', likeProfile);
+      $('openReportBtn').addEventListener('click', () => openModal('reportModal'));
+    }
+
+    function nextProfile() {
+      const items = filteredProfiles();
+      if (!items.length) return;
+      state.visibleIndex = (state.visibleIndex + 1) % items.length;
+      renderDiscover();
+    }
+
+    function likeProfile() {
+      const p = currentProfileData();
+      if (!p) return;
+      const isMatch = p.name === 'János' || p.cereal === state.profile.cereals[0] || Math.random() > 0.5;
+      if (isMatch) {
+        state.currentMatch = p;
+        showScreen('matchScreen');
+      } else {
+        nextProfile();
+      }
+    }
+
+    function renderMatch() {
+      const other = state.currentMatch?.name || 'Anna';
+      $('matchNames').textContent = `${state.profile.name || 'Te'} + ${other}`;
+    }
+
+    $('reportSubmitBtn').addEventListener('click', () => {
+      closeModal('reportModal');
+      openModal('banModal');
+    });
+
+    $('continueAfterBanBtn').addEventListener('click', () => {
+      closeModal('banModal');
+      nextProfile();
+      showScreen('discoverScreen');
+    });
+
+    function renderSettings() {
+      $('settingsEmail').value = state.settings.email;
+      $('settingsDistance').value = state.settings.distance;
+      $('notificationsToggle').checked = state.settings.notifications;
+      $('visibilityToggle').checked = state.settings.visible;
+    }
+
+    $('saveSettingsBtn').addEventListener('click', () => {
+      state.settings.email = $('settingsEmail').value.trim();
+      state.settings.distance = $('settingsDistance').value.trim();
+      state.settings.notifications = $('notificationsToggle').checked;
+      state.settings.visible = $('visibilityToggle').checked;
+      showScreen('discoverScreen');
+    });
+
+    $('logoutBtn').addEventListener('click', resetToHome);
+    $('deleteAccountBtn').addEventListener('click', () => openModal('deleteModal'));
+    $('confirmDeleteBtn').addEventListener('click', () => {
+      closeModal('deleteModal');
+      showScreen('deletedScreen');
+    });
+
+    function renderFilters() {
+      $('filterMinAge').value = state.filters.minAge;
+      $('filterMaxAge').value = state.filters.maxAge;
+      $('filterCereal').value = state.filters.cereal;
+      $('filterCity').value = state.filters.city;
+      $('filterBio').value = state.filters.bio;
+      $('filterTaste').checked = state.filters.taste;
+    }
+
+    $('applyFiltersBtn').addEventListener('click', () => {
+      state.filters.minAge = $('filterMinAge').value || 18;
+      state.filters.maxAge = $('filterMaxAge').value || 99;
+      state.filters.cereal = $('filterCereal').value.trim();
+      state.filters.city = $('filterCity').value.trim();
+      state.filters.bio = $('filterBio').value.trim();
+      state.filters.taste = $('filterTaste').checked;
+      state.visibleIndex = 0;
+      showScreen('discoverScreen');
+    });
+
+    function showMessage(title, body, returnScreen = 'homeScreen') {
+      $('messageTitle').textContent = title;
+      $('messageBody').textContent = body;
+      state.messageReturnScreen = returnScreen;
+      showScreen('messageScreen');
+    }
+
+    $('messageOkBtn').addEventListener('click', () => showScreen(state.messageReturnScreen));
+    $('backHomeBtn').addEventListener('click', resetToHome);
+
+    function resetToHome() {
+      state.history = ['homeScreen'];
+      state.visibleIndex = 0;
+      state.currentMatch = null;
+      showScreen('homeScreen', false);
+    }
+
+    renderOnboarding();
+    renderProfileEdit();
+    renderDiscover();
+  </script>
+</body>
+</html>
